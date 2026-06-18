@@ -1,4 +1,3 @@
 [build]
-dockerfilePath = "Dockerfile"
-dockerfileTarget = "production"
-
+builder = "NIXPACKS"
+buildCommand = "npm install --include=dev && npm run build"
