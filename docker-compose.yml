@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: milk_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-milk_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-milk_pass}
+      POSTGRES_DB: ${DB_NAME:-milk_db}
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-milk_user} -d ${DB_NAME:-milk_db}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: milk_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    ports:
+      - '${BACKEND_PORT:-4000}:4000'
+    volumes:
+      - ./backend/src:/app/src
+    command: npm run start:dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: milk_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      - BACKEND_URL=http://backend:4000
+    ports:
+      - '${FRONTEND_PORT:-3000}:3000'
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+
+volumes:
+  postgres_data:
