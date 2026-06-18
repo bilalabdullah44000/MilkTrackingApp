@@ -17,7 +17,7 @@
     "migration:generate": "npm run typeorm -- migration:generate",
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
-    "seed": "ts-node src/database/seeds/seed.ts"
+    "seed": "npx ts-node src/database/seeds/seed.ts"
   },
   "dependencies": {
     "@nestjs/apollo": "^12.2.0",
