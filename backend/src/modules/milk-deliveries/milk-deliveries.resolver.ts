@@ -31,14 +31,18 @@ export class MilkDeliveriesResolver {
   constructor(private readonly milkDeliveriesService: MilkDeliveriesService) {}
 
   @Query(() => DeliveriesResult)
-  getDeliveries(
+  async getDeliveries(
     @Args('startDate', { type: () => String }) startDate: string,
     @Args('endDate', { type: () => String }) endDate: string,
     @Args('customerIds', { type: () => [ID], nullable: true }) customerIds?: string[],
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
     @Args('offset', { type: () => Int, nullable: true }) offset?: number,
   ): Promise<DeliveriesResult> {
-    return this.milkDeliveriesService.findByDateRange(startDate, endDate, customerIds, limit ?? 20, offset ?? 0);
+    try {
+      return await this.milkDeliveriesService.findByDateRange(startDate, endDate, customerIds, limit ?? 20, offset ?? 0);
+    } catch (err: any) {
+      throw new Error(`getDeliveries error: ${err.stack || err.message}`);
+    }
   }
 
   @Mutation(() => MilkDelivery)

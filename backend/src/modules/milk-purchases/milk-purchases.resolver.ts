@@ -32,14 +32,18 @@ export class MilkPurchasesResolver {
   constructor(private readonly milkPurchasesService: MilkPurchasesService) {}
 
   @Query(() => PurchasesResult)
-  getPurchases(
+  async getPurchases(
     @Args('startDate', { type: () => String }) startDate: string,
     @Args('endDate', { type: () => String }) endDate: string,
     @Args('vendorIds', { type: () => [ID], nullable: true }) vendorIds?: string[],
     @Args('limit', { type: () => Int, nullable: true }) limit?: number,
     @Args('offset', { type: () => Int, nullable: true }) offset?: number,
   ): Promise<PurchasesResult> {
-    return this.milkPurchasesService.findByDateRange(startDate, endDate, vendorIds, limit ?? 20, offset ?? 0);
+    try {
+      return await this.milkPurchasesService.findByDateRange(startDate, endDate, vendorIds, limit ?? 20, offset ?? 0);
+    } catch (err: any) {
+      throw new Error(`getPurchases error: ${err.stack || err.message}`);
+    }
   }
 
   @Mutation(() => MilkPurchase)
