@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, ID, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, Int, ObjectType, Field } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { Customer } from './customer.entity';
@@ -10,6 +10,15 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Role } from '../users/user.entity';
 import { User } from '../users/user.entity';
 
+@ObjectType()
+class CustomersPageResult {
+  @Field(() => [Customer])
+  items: Customer[];
+
+  @Field(() => Int)
+  total: number;
+}
+
 @Resolver(() => Customer)
 @UseGuards(GqlAuthGuard)
 export class CustomersResolver {
@@ -18,6 +27,16 @@ export class CustomersResolver {
   @Query(() => [Customer])
   getCustomers(@Args('activeOnly', { nullable: true }) activeOnly?: boolean): Promise<Customer[]> {
     return this.customersService.findAll(activeOnly);
+  }
+
+  @Query(() => CustomersPageResult)
+  getCustomersPage(
+    @Args('activeOnly', { nullable: true }) activeOnly?: boolean,
+    @Args('search', { type: () => String, nullable: true }) search?: string,
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+    @Args('offset', { type: () => Int, nullable: true }) offset?: number,
+  ): Promise<CustomersPageResult> {
+    return this.customersService.findPage(activeOnly, search, limit ?? 20, offset ?? 0);
   }
 
   @Query(() => [Customer])

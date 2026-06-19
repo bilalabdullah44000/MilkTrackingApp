@@ -3,6 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer, BillStatus } from './customer.entity';
 
+export interface CustomersPage {
+  items: Customer[];
+  total: number;
+}
+
 @Injectable()
 export class CustomersRepository {
   constructor(
@@ -52,6 +57,28 @@ export class CustomersRepository {
       .set({ defaultRate })
       .execute();
     return result.affected ?? 0;
+  }
+
+  async findPage(activeOnly?: boolean, search?: string, limit = 20, offset = 0): Promise<CustomersPage> {
+    const qb = this.repo.createQueryBuilder('c').orderBy('c.name', 'ASC');
+
+    if (activeOnly) {
+      qb.where('c.active = true');
+    }
+
+    if (search) {
+      const term = `%${search.toLowerCase()}%`;
+      if (activeOnly) {
+        qb.andWhere('LOWER(c.name) LIKE :search', { search: term });
+      } else {
+        qb.where('LOWER(c.name) LIKE :search', { search: term });
+      }
+    }
+
+    const total = await qb.getCount();
+    const items = await qb.skip(offset).take(limit).getMany();
+
+    return { items, total };
   }
 
   async resetAllBillStatus(): Promise<void> {

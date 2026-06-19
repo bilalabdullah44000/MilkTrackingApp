@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { CustomersRepository } from './customers.repository';
-import { Customer } from './customer.entity';
+import { Customer, BillStatus } from './customer.entity';
 import { User } from '../users/user.entity';
 import { z } from 'zod';
 
@@ -9,7 +9,7 @@ const CustomerSchema = z.object({
   defaultRate: z.number().positive(),
   notes: z.string().optional(),
   active: z.boolean().optional(),
-  billStatus: z.string().optional(),
+  billStatus: z.nativeEnum(BillStatus).optional(),
 });
 
 @Injectable()
@@ -30,7 +30,7 @@ export class CustomersService {
     return this.customersRepository.findActiveCustomersWithoutDeliveryOnDate(date);
   }
 
-  async create(input: { name: string; defaultRate: number; notes?: string }, user: User): Promise<Customer> {
+  async create(input: { name: string; defaultRate: number; notes?: string; active?: boolean; billStatus?: BillStatus }, user: User): Promise<Customer> {
     const parsed = CustomerSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.errors[0].message);
 
@@ -46,7 +46,7 @@ export class CustomersService {
 
   async update(
     id: string,
-    input: { name: string; defaultRate: number; notes?: string; active?: boolean },
+    input: { name: string; defaultRate: number; notes?: string; active?: boolean; billStatus?: BillStatus },
     user: User,
   ): Promise<Customer> {
     const parsed = CustomerSchema.safeParse(input);
@@ -67,6 +67,10 @@ export class CustomersService {
   updateAllDefaultRate(defaultRate: number): Promise<number> {
     if (defaultRate <= 0) throw new Error('Rate must be positive');
     return this.customersRepository.updateAllDefaultRate(defaultRate);
+  }
+
+  findPage(activeOnly?: boolean, search?: string, limit = 20, offset = 0): Promise<{ items: Customer[]; total: number }> {
+    return this.customersRepository.findPage(activeOnly, search, limit, offset);
   }
 
   resetAllBillStatus(): Promise<void> {
