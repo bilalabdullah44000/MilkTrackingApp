@@ -36,7 +36,7 @@ export class MilkPurchasesRepository {
       qb.andWhere('mp.vendor_id IN (:...vendorIds)', { vendorIds });
     }
 
-    const total = await qb.getCount();
+    const total = await qb.clone().getCount();
 
     const aggQb = this.repo
       .createQueryBuilder('mp')
@@ -50,7 +50,7 @@ export class MilkPurchasesRepository {
 
     const agg = await aggQb.getRawOne();
 
-    const items = await qb.skip(offset).take(limit).getMany();
+    const items = await qb.clone().skip(offset).take(limit).getMany();
 
     return {
       items,
