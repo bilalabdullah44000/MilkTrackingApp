@@ -30,7 +30,7 @@ export class MilkPurchasesRepository {
       .leftJoinAndSelect('mp.createdBy', 'createdBy')
       .leftJoinAndSelect('mp.updatedBy', 'updatedBy')
       .where('mp.purchase_date BETWEEN :startDate AND :endDate', { startDate, endDate })
-      .orderBy('mp.purchase_date', 'DESC');
+      .orderBy('mp.purchaseDate', 'DESC');
 
     if (vendorIds && vendorIds.length > 0) {
       qb.andWhere('mp.vendor_id IN (:...vendorIds)', { vendorIds });
@@ -91,7 +91,7 @@ export class MilkPurchasesRepository {
       .leftJoinAndSelect('mp.vendor', 'vendor')
       .where('mp.vendor_id = :vendorId', { vendorId })
       .andWhere('mp.purchase_date BETWEEN :startDate AND :endDate', { startDate, endDate })
-      .orderBy('mp.purchase_date', 'ASC')
+      .orderBy('mp.purchaseDate', 'ASC')
       .getMany();
   }
 }

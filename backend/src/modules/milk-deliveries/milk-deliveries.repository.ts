@@ -31,7 +31,7 @@ export class MilkDeliveriesRepository {
       .leftJoinAndSelect('md.createdBy', 'createdBy')
       .leftJoinAndSelect('md.updatedBy', 'updatedBy')
       .where('md.delivery_date BETWEEN :startDate AND :endDate', { startDate, endDate })
-      .orderBy('md.delivery_date', 'DESC');
+      .orderBy('md.deliveryDate', 'DESC');
 
     if (customerIds && customerIds.length > 0) {
       qb.andWhere('md.customer_id IN (:...customerIds)', { customerIds });
@@ -92,7 +92,7 @@ export class MilkDeliveriesRepository {
       .leftJoinAndSelect('md.customer', 'customer')
       .where('md.customer_id = :customerId', { customerId })
       .andWhere('md.delivery_date BETWEEN :startDate AND :endDate', { startDate, endDate })
-      .orderBy('md.delivery_date', 'ASC')
+      .orderBy('md.deliveryDate', 'ASC')
       .getMany();
   }
 
