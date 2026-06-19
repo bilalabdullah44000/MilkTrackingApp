@@ -160,6 +160,12 @@ export const CREATE_USER = gql`
   }
 `;
 
+export const UPDATE_ALL_CUSTOMERS_RATE = gql`
+  mutation UpdateAllCustomersRate($defaultRate: Float!) {
+    updateAllCustomersRate(defaultRate: $defaultRate)
+  }
+`;
+
 export const UPDATE_USER = gql`
   mutation UpdateUser($id: ID!, $input: UpdateUserInput!) {
     updateUser(id: $id, input: $input) {

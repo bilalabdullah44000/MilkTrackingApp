@@ -6,7 +6,7 @@ import {
   DialogTitle, DialogContent, DialogActions, TextField,
   MenuItem, Select, FormControl, InputLabel, Skeleton,
   Tooltip, FormHelperText, Checkbox, ListItemText, Chip, OutlinedInput,
-  ToggleButton, ToggleButtonGroup, ListSubheader, InputAdornment,
+  ToggleButton, ToggleButtonGroup, ListSubheader, InputAdornment, TablePagination,
 } from '@mui/material';
 import { Add, Edit, Delete, Search } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
@@ -20,6 +20,8 @@ import { formatCurrency, formatDate, today, startOfMonth, endOfMonth } from '../
 import { useAuth } from '../../contexts/AuthContext';
 import { useSearchParams } from 'react-router-dom';
 import { Role } from '../../types';
+
+const PAGE_SIZE = 20;
 
 type DatePreset = 'today' | 'yesterday' | 'thisMonth' | 'custom';
 
@@ -59,6 +61,7 @@ export default function DeliveriesPage() {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [customerFilterSearch, setCustomerFilterSearch] = useState('');
   const [customerFormSearch, setCustomerFormSearch] = useState('');
+  const [page, setPage] = useState(0);
 
   const { startDate, endDate } = resolveDateRange(datePreset, customStart, customEnd);
 
@@ -70,6 +73,8 @@ export default function DeliveriesPage() {
       startDate,
       endDate,
       customerIds: selectedCustomerIds.length > 0 ? selectedCustomerIds : undefined,
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
     },
   });
 
@@ -87,10 +92,11 @@ export default function DeliveriesPage() {
     resolver: zodResolver(schema),
   });
 
-  const deliveries: MilkDelivery[] = data?.getDeliveries ?? [];
+  const deliveries: MilkDelivery[] = data?.getDeliveries?.items ?? [];
+  const total: number = data?.getDeliveries?.total ?? 0;
+  const totalLiters: number = data?.getDeliveries?.totalLiters ?? 0;
+  const totalRevenue: number = data?.getDeliveries?.totalRevenue ?? 0;
   const isOwner = user?.role === Role.OWNER;
-  const totalLiters = deliveries.reduce((s, d) => s + d.quantityLiters, 0);
-  const totalAmount = deliveries.reduce((s, d) => s + d.totalAmount, 0);
 
   useEffect(() => {
     if (searchParams.get('add') === '1') {
@@ -143,6 +149,8 @@ export default function DeliveriesPage() {
     }
   };
 
+  const handleFilterChange = (fn: () => void) => { fn(); setPage(0); };
+
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
@@ -156,7 +164,7 @@ export default function DeliveriesPage() {
             value={datePreset}
             exclusive
             size="small"
-            onChange={(_, v) => { if (v) setDatePreset(v); }}
+            onChange={(_, v) => { if (v) handleFilterChange(() => setDatePreset(v)); }}
           >
             <ToggleButton value="today">Today</ToggleButton>
             <ToggleButton value="yesterday">Yesterday</ToggleButton>
@@ -168,12 +176,12 @@ export default function DeliveriesPage() {
             <>
               <TextField
                 type="date" label="From" value={customStart}
-                onChange={(e) => setCustomStart(e.target.value)}
+                onChange={(e) => handleFilterChange(() => setCustomStart(e.target.value))}
                 InputLabelProps={{ shrink: true }} size="small"
               />
               <TextField
                 type="date" label="To" value={customEnd}
-                onChange={(e) => setCustomEnd(e.target.value)}
+                onChange={(e) => handleFilterChange(() => setCustomEnd(e.target.value))}
                 InputLabelProps={{ shrink: true }} size="small"
               />
             </>
@@ -184,7 +192,7 @@ export default function DeliveriesPage() {
             <Select
               multiple
               value={selectedCustomerIds}
-              onChange={(e) => setSelectedCustomerIds(e.target.value as string[])}
+              onChange={(e) => handleFilterChange(() => setSelectedCustomerIds(e.target.value as string[]))}
               onClose={() => setCustomerFilterSearch('')}
               input={<OutlinedInput label="Customers" />}
               renderValue={(selected) =>
@@ -229,7 +237,7 @@ export default function DeliveriesPage() {
             {isOwner && (
               <Box textAlign="right">
                 <Typography variant="caption" color="text.secondary">Total Revenue</Typography>
-                <Typography fontWeight={700} color="success.main">{formatCurrency(totalAmount)}</Typography>
+                <Typography fontWeight={700} color="success.main">{formatCurrency(totalRevenue)}</Typography>
               </Box>
             )}
           </Box>
@@ -272,6 +280,14 @@ export default function DeliveriesPage() {
             </TableBody>
           </Table>
         </TableContainer>
+        <TablePagination
+          component="div"
+          count={total}
+          page={page}
+          onPageChange={(_, p) => setPage(p)}
+          rowsPerPage={PAGE_SIZE}
+          rowsPerPageOptions={[PAGE_SIZE]}
+        />
       </Card>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
@@ -310,7 +326,7 @@ export default function DeliveriesPage() {
             />
             <TextField {...register('deliveryDate')} label="Date" type="date" fullWidth InputLabelProps={{ shrink: true }} error={!!errors.deliveryDate} helperText={errors.deliveryDate?.message} inputProps={{ max: today() }} />
             <TextField {...register('quantityLiters', { valueAsNumber: true })} label="Quantity (Liters)" type="number" inputProps={{ step: '0.1', min: '0.1' }} fullWidth error={!!errors.quantityLiters} helperText={errors.quantityLiters?.message} autoFocus />
-            <TextField {...register('ratePerLiter', { valueAsNumber: true })} label="Rate per Liter" type="number" inputProps={{ step: '0.01', min: '0' }} fullWidth error={!!errors.ratePerLiter} helperText={errors.ratePerLiter?.message} />
+            <TextField {...register('ratePerLiter', { valueAsNumber: true })} label="Rate per Liter" type="number" inputProps={{ step: '0.01', min: '0' }} InputLabelProps={{ shrink: true }} fullWidth error={!!errors.ratePerLiter} helperText={errors.ratePerLiter?.message} />
             <TextField {...register('notes')} label="Notes (optional)" fullWidth multiline rows={2} />
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>

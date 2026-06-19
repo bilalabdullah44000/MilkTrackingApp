@@ -116,14 +116,13 @@ export default function UsersPage() {
                 <TableCell>Email</TableCell>
                 <TableCell>Role</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Joined</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading
                 ? Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i}>{Array.from({ length: 6 }).map((_, j) => <TableCell key={j}><Skeleton /></TableCell>)}</TableRow>
+                    <TableRow key={i}>{Array.from({ length: 5 }).map((_, j) => <TableCell key={j}><Skeleton /></TableCell>)}</TableRow>
                   ))
                 : users.map((u) => (
                     <TableRow key={u.id} hover>
@@ -135,7 +134,6 @@ export default function UsersPage() {
                       <TableCell>
                         <Chip label={u.active ? 'Active' : 'Inactive'} size="small" color={u.active ? 'success' : 'default'} />
                       </TableCell>
-                      <TableCell>{new Date(u.createdAt).toLocaleDateString()}</TableCell>
                       <TableCell align="right">
                         <Tooltip title="Change Role">
                           <IconButton size="small" onClick={() => openEdit(u)}>

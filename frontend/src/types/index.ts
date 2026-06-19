@@ -3,6 +3,11 @@ export enum Role {
   WORKER = 'WORKER',
 }
 
+export enum BillStatus {
+  PAID = 'PAID',
+  UNPAID = 'UNPAID',
+}
+
 export interface AuthUser {
   id: string;
   fullName: string;
@@ -27,8 +32,23 @@ export interface Customer {
   defaultRate: number;
   active: boolean;
   notes?: string;
+  billStatus: BillStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PurchasesResult {
+  items: MilkPurchase[];
+  total: number;
+  totalLiters: number;
+  totalCost: number;
+}
+
+export interface DeliveriesResult {
+  items: MilkDelivery[];
+  total: number;
+  totalLiters: number;
+  totalRevenue: number;
 }
 
 export interface MilkPurchase {

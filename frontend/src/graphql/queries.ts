@@ -34,44 +34,73 @@ export const GET_CUSTOMERS = gql`
       defaultRate
       active
       notes
+      billStatus
       createdAt
       updatedAt
     }
   }
 `;
 
-export const GET_PURCHASES = gql`
-  query GetPurchases($startDate: String!, $endDate: String!, $vendorIds: [ID!]) {
-    getPurchases(startDate: $startDate, endDate: $endDate, vendorIds: $vendorIds) {
-      id
-      vendor {
+export const GET_CUSTOMERS_PAGE = gql`
+  query GetCustomersPage($activeOnly: Boolean, $search: String, $limit: Int, $offset: Int) {
+    getCustomersPage(activeOnly: $activeOnly, search: $search, limit: $limit, offset: $offset) {
+      items {
         id
         name
+        defaultRate
+        active
+        notes
+        billStatus
+        createdAt
+        updatedAt
       }
-      purchaseDate
-      quantityLiters
-      ratePerLiter
-      totalAmount
-      notes
-      createdAt
+      total
+    }
+  }
+`;
+
+export const GET_PURCHASES = gql`
+  query GetPurchases($startDate: String!, $endDate: String!, $vendorIds: [ID!], $limit: Int, $offset: Int) {
+    getPurchases(startDate: $startDate, endDate: $endDate, vendorIds: $vendorIds, limit: $limit, offset: $offset) {
+      items {
+        id
+        vendor {
+          id
+          name
+        }
+        purchaseDate
+        quantityLiters
+        ratePerLiter
+        totalAmount
+        notes
+        createdAt
+      }
+      total
+      totalLiters
+      totalCost
     }
   }
 `;
 
 export const GET_DELIVERIES = gql`
-  query GetDeliveries($startDate: String!, $endDate: String!, $customerIds: [ID!]) {
-    getDeliveries(startDate: $startDate, endDate: $endDate, customerIds: $customerIds) {
-      id
-      customer {
+  query GetDeliveries($startDate: String!, $endDate: String!, $customerIds: [ID!], $limit: Int, $offset: Int) {
+    getDeliveries(startDate: $startDate, endDate: $endDate, customerIds: $customerIds, limit: $limit, offset: $offset) {
+      items {
         id
-        name
+        customer {
+          id
+          name
+        }
+        deliveryDate
+        quantityLiters
+        ratePerLiter
+        totalAmount
+        notes
+        createdAt
       }
-      deliveryDate
-      quantityLiters
-      ratePerLiter
-      totalAmount
-      notes
-      createdAt
+      total
+      totalLiters
+      totalRevenue
     }
   }
 `;

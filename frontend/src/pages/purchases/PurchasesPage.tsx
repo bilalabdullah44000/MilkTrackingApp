@@ -6,7 +6,7 @@ import {
   DialogTitle, DialogContent, DialogActions, TextField,
   MenuItem, Select, FormControl, InputLabel, Skeleton,
   Tooltip, FormHelperText, Checkbox, ListItemText, Chip, OutlinedInput,
-  ToggleButton, ToggleButtonGroup, ListSubheader, InputAdornment,
+  ToggleButton, ToggleButtonGroup, ListSubheader, InputAdornment, TablePagination,
 } from '@mui/material';
 import { Add, Edit, Delete, Search } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
@@ -18,6 +18,8 @@ import { GET_PURCHASES, GET_VENDORS } from '../../graphql/queries';
 import { ADD_PURCHASE, UPDATE_PURCHASE, DELETE_PURCHASE } from '../../graphql/mutations';
 import { MilkPurchase, Vendor } from '../../types';
 import { formatCurrency, formatDate, today, startOfMonth, endOfMonth } from '../../utils/formatters';
+
+const PAGE_SIZE = 20;
 
 type DatePreset = 'today' | 'yesterday' | 'thisMonth' | 'custom';
 
@@ -56,6 +58,7 @@ export default function PurchasesPage() {
   const [selectedVendorIds, setSelectedVendorIds] = useState<string[]>([]);
   const [vendorFilterSearch, setVendorFilterSearch] = useState('');
   const [vendorFormSearch, setVendorFormSearch] = useState('');
+  const [page, setPage] = useState(0);
 
   const { startDate, endDate } = resolveDateRange(datePreset, customStart, customEnd);
 
@@ -67,6 +70,8 @@ export default function PurchasesPage() {
       startDate,
       endDate,
       vendorIds: selectedVendorIds.length > 0 ? selectedVendorIds : undefined,
+      limit: PAGE_SIZE,
+      offset: page * PAGE_SIZE,
     },
   });
 
@@ -84,9 +89,10 @@ export default function PurchasesPage() {
     resolver: zodResolver(schema),
   });
 
-  const purchases: MilkPurchase[] = data?.getPurchases ?? [];
-  const totalLiters = purchases.reduce((s, p) => s + p.quantityLiters, 0);
-  const totalAmount = purchases.reduce((s, p) => s + p.totalAmount, 0);
+  const purchases: MilkPurchase[] = data?.getPurchases?.items ?? [];
+  const total: number = data?.getPurchases?.total ?? 0;
+  const totalLiters: number = data?.getPurchases?.totalLiters ?? 0;
+  const totalCost: number = data?.getPurchases?.totalCost ?? 0;
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this purchase? This cannot be undone.')) return;
@@ -139,6 +145,8 @@ export default function PurchasesPage() {
     }
   };
 
+  const handleFilterChange = (fn: () => void) => { fn(); setPage(0); };
+
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
@@ -152,7 +160,7 @@ export default function PurchasesPage() {
             value={datePreset}
             exclusive
             size="small"
-            onChange={(_, v) => { if (v) setDatePreset(v); }}
+            onChange={(_, v) => { if (v) handleFilterChange(() => setDatePreset(v)); }}
           >
             <ToggleButton value="today">Today</ToggleButton>
             <ToggleButton value="yesterday">Yesterday</ToggleButton>
@@ -164,12 +172,12 @@ export default function PurchasesPage() {
             <>
               <TextField
                 type="date" label="From" value={customStart}
-                onChange={(e) => setCustomStart(e.target.value)}
+                onChange={(e) => handleFilterChange(() => setCustomStart(e.target.value))}
                 InputLabelProps={{ shrink: true }} size="small"
               />
               <TextField
                 type="date" label="To" value={customEnd}
-                onChange={(e) => setCustomEnd(e.target.value)}
+                onChange={(e) => handleFilterChange(() => setCustomEnd(e.target.value))}
                 InputLabelProps={{ shrink: true }} size="small"
               />
             </>
@@ -180,7 +188,7 @@ export default function PurchasesPage() {
             <Select
               multiple
               value={selectedVendorIds}
-              onChange={(e) => setSelectedVendorIds(e.target.value as string[])}
+              onChange={(e) => handleFilterChange(() => setSelectedVendorIds(e.target.value as string[]))}
               onClose={() => setVendorFilterSearch('')}
               input={<OutlinedInput label="Vendors" />}
               renderValue={(selected) =>
@@ -224,7 +232,7 @@ export default function PurchasesPage() {
             </Box>
             <Box textAlign="right">
               <Typography variant="caption" color="text.secondary">Total Cost</Typography>
-              <Typography fontWeight={700} color="error.main">{formatCurrency(totalAmount)}</Typography>
+              <Typography fontWeight={700} color="error.main">{formatCurrency(totalCost)}</Typography>
             </Box>
           </Box>
         </Box>
@@ -264,6 +272,14 @@ export default function PurchasesPage() {
             </TableBody>
           </Table>
         </TableContainer>
+        <TablePagination
+          component="div"
+          count={total}
+          page={page}
+          onPageChange={(_, p) => setPage(p)}
+          rowsPerPage={PAGE_SIZE}
+          rowsPerPageOptions={[PAGE_SIZE]}
+        />
       </Card>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
@@ -302,7 +318,7 @@ export default function PurchasesPage() {
             />
             <TextField {...register('purchaseDate')} label="Date" type="date" fullWidth InputLabelProps={{ shrink: true }} error={!!errors.purchaseDate} helperText={errors.purchaseDate?.message} inputProps={{ max: today() }} />
             <TextField {...register('quantityLiters', { valueAsNumber: true })} label="Quantity (Liters)" type="number" inputProps={{ step: '0.1', min: '0.1' }} fullWidth error={!!errors.quantityLiters} helperText={errors.quantityLiters?.message} />
-            <TextField {...register('ratePerLiter', { valueAsNumber: true })} label="Rate per Liter" type="number" inputProps={{ step: '0.01', min: '0' }} fullWidth error={!!errors.ratePerLiter} helperText={errors.ratePerLiter?.message} />
+            <TextField {...register('ratePerLiter', { valueAsNumber: true })} label="Rate per Liter" type="number" inputProps={{ step: '0.01', min: '0' }} InputLabelProps={{ shrink: true }} fullWidth error={!!errors.ratePerLiter} helperText={errors.ratePerLiter?.message} />
             <TextField {...register('notes')} label="Notes (optional)" fullWidth multiline rows={2} />
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>

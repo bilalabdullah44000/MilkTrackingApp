@@ -18,7 +18,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+            <SnackbarProvider maxSnack={3} autoHideDuration={1500} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
               <AuthProvider>
                 <App />
               </AuthProvider>
