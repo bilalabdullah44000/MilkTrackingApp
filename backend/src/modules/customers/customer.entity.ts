@@ -7,8 +7,15 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ObjectType, Field, ID } from '@nestjs/graphql';
+import { ObjectType, Field, ID, registerEnumType } from '@nestjs/graphql';
 import { User } from '../users/user.entity';
+
+export enum BillStatus {
+  PAID = 'PAID',
+  UNPAID = 'UNPAID',
+}
+
+registerEnumType(BillStatus, { name: 'BillStatus' });
 
 @ObjectType()
 @Entity('customers')
@@ -32,6 +39,10 @@ export class Customer {
   @Field({ nullable: true })
   @Column({ nullable: true, type: 'text' })
   notes?: string;
+
+  @Field(() => BillStatus)
+  @Column({ type: 'enum', enum: BillStatus, default: BillStatus.UNPAID, name: 'bill_status' })
+  billStatus: BillStatus;
 
   @Field(() => User)
   @ManyToOne(() => User)

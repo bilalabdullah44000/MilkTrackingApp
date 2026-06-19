@@ -28,8 +28,8 @@ export class MilkDeliveriesService {
     private readonly customersService: CustomersService,
   ) {}
 
-  findByDateRange(startDate: string, endDate: string, customerIds?: string[]): Promise<MilkDelivery[]> {
-    return this.repo.findByDateRange(startDate, endDate, customerIds);
+  findByDateRange(startDate: string, endDate: string, customerIds?: string[], limit = 20, offset = 0) {
+    return this.repo.findByDateRange(startDate, endDate, customerIds, limit, offset);
   }
 
   async findById(id: string): Promise<MilkDelivery> {

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Customer } from './customer.entity';
+import { Customer, BillStatus } from './customer.entity';
 
 @Injectable()
 export class CustomersRepository {
@@ -43,5 +43,22 @@ export class CustomersRepository {
       .andWhere('md.id IS NULL')
       .orderBy('c.name', 'ASC')
       .getMany();
+  }
+
+  async updateAllDefaultRate(defaultRate: number): Promise<number> {
+    const result = await this.repo
+      .createQueryBuilder()
+      .update(Customer)
+      .set({ defaultRate })
+      .execute();
+    return result.affected ?? 0;
+  }
+
+  async resetAllBillStatus(): Promise<void> {
+    await this.repo
+      .createQueryBuilder()
+      .update(Customer)
+      .set({ billStatus: BillStatus.UNPAID })
+      .execute();
   }
 }

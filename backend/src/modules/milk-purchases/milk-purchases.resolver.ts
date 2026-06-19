@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, Int, ObjectType, Field } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { MilkPurchasesService } from './milk-purchases.service';
 import { MilkPurchase } from './milk-purchase.entity';
@@ -10,19 +10,36 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Role } from '../users/user.entity';
 import { User } from '../users/user.entity';
 
+@ObjectType()
+class PurchasesResult {
+  @Field(() => [MilkPurchase])
+  items: MilkPurchase[];
+
+  @Field(() => Int)
+  total: number;
+
+  @Field()
+  totalLiters: number;
+
+  @Field()
+  totalCost: number;
+}
+
 @Resolver(() => MilkPurchase)
 @UseGuards(GqlAuthGuard, RolesGuard)
 @Roles(Role.OWNER)
 export class MilkPurchasesResolver {
   constructor(private readonly milkPurchasesService: MilkPurchasesService) {}
 
-  @Query(() => [MilkPurchase])
+  @Query(() => PurchasesResult)
   getPurchases(
     @Args('startDate', { type: () => String }) startDate: string,
     @Args('endDate', { type: () => String }) endDate: string,
     @Args('vendorIds', { type: () => [ID], nullable: true }) vendorIds?: string[],
-  ): Promise<MilkPurchase[]> {
-    return this.milkPurchasesService.findByDateRange(startDate, endDate, vendorIds);
+    @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+    @Args('offset', { type: () => Int, nullable: true }) offset?: number,
+  ): Promise<PurchasesResult> {
+    return this.milkPurchasesService.findByDateRange(startDate, endDate, vendorIds, limit ?? 20, offset ?? 0);
   }
 
   @Mutation(() => MilkPurchase)

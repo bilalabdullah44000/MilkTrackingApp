@@ -3,6 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { MilkDelivery } from './milk-delivery.entity';
 
+export interface DeliveriesPage {
+  items: MilkDelivery[];
+  total: number;
+  totalLiters: number;
+  totalRevenue: number;
+}
+
 @Injectable()
 export class MilkDeliveriesRepository {
   constructor(
@@ -11,7 +18,13 @@ export class MilkDeliveriesRepository {
     private readonly dataSource: DataSource,
   ) {}
 
-  findByDateRange(startDate: string, endDate: string, customerIds?: string[]): Promise<MilkDelivery[]> {
+  async findByDateRange(
+    startDate: string,
+    endDate: string,
+    customerIds?: string[],
+    limit = 20,
+    offset = 0,
+  ): Promise<DeliveriesPage> {
     const qb = this.repo
       .createQueryBuilder('md')
       .leftJoinAndSelect('md.customer', 'customer')
@@ -23,7 +36,29 @@ export class MilkDeliveriesRepository {
     if (customerIds && customerIds.length > 0) {
       qb.andWhere('md.customer_id IN (:...customerIds)', { customerIds });
     }
-    return qb.getMany();
+
+    const total = await qb.getCount();
+
+    const aggQb = this.repo
+      .createQueryBuilder('md')
+      .select('COALESCE(SUM(md.quantity_liters), 0)', 'totalLiters')
+      .addSelect('COALESCE(SUM(md.total_amount), 0)', 'totalRevenue')
+      .where('md.delivery_date BETWEEN :startDate AND :endDate', { startDate, endDate });
+
+    if (customerIds && customerIds.length > 0) {
+      aggQb.andWhere('md.customer_id IN (:...customerIds)', { customerIds });
+    }
+
+    const agg = await aggQb.getRawOne();
+
+    const items = await qb.skip(offset).take(limit).getMany();
+
+    return {
+      items,
+      total,
+      totalLiters: parseFloat(agg.totalLiters),
+      totalRevenue: parseFloat(agg.totalRevenue),
+    };
   }
 
   findById(id: string): Promise<MilkDelivery | null> {

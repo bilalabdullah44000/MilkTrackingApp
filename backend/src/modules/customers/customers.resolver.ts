@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, Int } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { CustomersService } from './customers.service';
 import { Customer } from './customer.entity';
@@ -48,4 +48,12 @@ export class CustomersResolver {
     return this.customersService.update(id, input, user);
   }
 
+  @Mutation(() => Int)
+  @UseGuards(RolesGuard)
+  @Roles(Role.OWNER)
+  updateAllCustomersRate(
+    @Args('defaultRate') defaultRate: number,
+  ): Promise<number> {
+    return this.customersService.updateAllDefaultRate(defaultRate);
+  }
 }

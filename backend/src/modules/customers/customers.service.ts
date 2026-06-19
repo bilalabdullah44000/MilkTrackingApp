@@ -9,6 +9,7 @@ const CustomerSchema = z.object({
   defaultRate: z.number().positive(),
   notes: z.string().optional(),
   active: z.boolean().optional(),
+  billStatus: z.string().optional(),
 });
 
 @Injectable()
@@ -61,6 +62,15 @@ export class CustomersService {
       ...parsed.data,
       updatedBy: user,
     });
+  }
+
+  updateAllDefaultRate(defaultRate: number): Promise<number> {
+    if (defaultRate <= 0) throw new Error('Rate must be positive');
+    return this.customersRepository.updateAllDefaultRate(defaultRate);
+  }
+
+  resetAllBillStatus(): Promise<void> {
+    return this.customersRepository.resetAllBillStatus();
   }
 
   async delete(id: string): Promise<boolean> {

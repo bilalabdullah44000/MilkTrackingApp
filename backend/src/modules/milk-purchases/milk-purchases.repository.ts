@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository } from 'typeorm';
 import { MilkPurchase } from './milk-purchase.entity';
+
+export interface PurchasesPage {
+  items: MilkPurchase[];
+  total: number;
+  totalLiters: number;
+  totalCost: number;
+}
 
 @Injectable()
 export class MilkPurchasesRepository {
@@ -10,7 +17,13 @@ export class MilkPurchasesRepository {
     private readonly repo: Repository<MilkPurchase>,
   ) {}
 
-  findByDateRange(startDate: string, endDate: string, vendorIds?: string[]): Promise<MilkPurchase[]> {
+  async findByDateRange(
+    startDate: string,
+    endDate: string,
+    vendorIds?: string[],
+    limit = 20,
+    offset = 0,
+  ): Promise<PurchasesPage> {
     const qb = this.repo
       .createQueryBuilder('mp')
       .leftJoinAndSelect('mp.vendor', 'vendor')
@@ -22,7 +35,29 @@ export class MilkPurchasesRepository {
     if (vendorIds && vendorIds.length > 0) {
       qb.andWhere('mp.vendor_id IN (:...vendorIds)', { vendorIds });
     }
-    return qb.getMany();
+
+    const total = await qb.getCount();
+
+    const aggQb = this.repo
+      .createQueryBuilder('mp')
+      .select('COALESCE(SUM(mp.quantity_liters), 0)', 'totalLiters')
+      .addSelect('COALESCE(SUM(mp.total_amount), 0)', 'totalCost')
+      .where('mp.purchase_date BETWEEN :startDate AND :endDate', { startDate, endDate });
+
+    if (vendorIds && vendorIds.length > 0) {
+      aggQb.andWhere('mp.vendor_id IN (:...vendorIds)', { vendorIds });
+    }
+
+    const agg = await aggQb.getRawOne();
+
+    const items = await qb.skip(offset).take(limit).getMany();
+
+    return {
+      items,
+      total,
+      totalLiters: parseFloat(agg.totalLiters),
+      totalCost: parseFloat(agg.totalCost),
+    };
   }
 
   findById(id: string): Promise<MilkPurchase | null> {

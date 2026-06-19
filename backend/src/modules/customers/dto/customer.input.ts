@@ -1,4 +1,5 @@
 import { InputType, Field } from '@nestjs/graphql';
+import { BillStatus } from '../customer.entity';
 
 @InputType()
 export class CreateCustomerInput {
@@ -13,4 +14,7 @@ export class CreateCustomerInput {
 
   @Field(() => Boolean, { nullable: true })
   active?: boolean;
+
+  @Field(() => BillStatus, { nullable: true })
+  billStatus?: BillStatus;
 }
